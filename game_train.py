@@ -18,14 +18,24 @@ if not os.path.exists(save_dir):
 q_table_path = os.path.join(save_dir, "q_table.pkl")
 log_file_path = os.path.join(save_dir, "learning_log.txt")
 
-
+# -------------------------------------------------------------------
+# Function: save_q_table
+#
+# Saves the current Q-table (a Python dictionary) into a pickle file.
+# This allows the training results to be stored and loaded later.
+# -------------------------------------------------------------------
 def save_q_table(q_table):
     """Save the Q-table to a pickle file."""
     with open(q_table_path, "wb") as f:
         pickle.dump(q_table, f)
     print(f"Q-table has been saved to: {q_table_path}")
 
-
+# -------------------------------------------------------------------
+# Function: load_q_table
+#
+# Loads the Q-table from the specified file. If the file does not exist,
+# it returns an empty dictionary to start with.
+# -------------------------------------------------------------------
 def load_q_table():
     """Load the saved Q-table from a file if it exists; otherwise, return an empty dictionary."""
     if os.path.exists(q_table_path):
@@ -37,7 +47,13 @@ def load_q_table():
         print("No saved Q-table found. Initializing a new one.")
         return {}
 
-
+# -------------------------------------------------------------------
+# Function: log_episode
+#
+# This function writes the progress of an episode (its number, total reward,
+# and current epsilon value) to the log file.
+# The log is written as a plain text line.
+# -------------------------------------------------------------------
 def log_episode(episode, total_reward, epsilon):
     """
     Record the learning progress in the log file.
@@ -52,16 +68,21 @@ def log_episode(episode, total_reward, epsilon):
 # -------------------------
 # Game initialization parameters
 # -------------------------
-WINDOW_WIDTH = 400
-WINDOW_HEIGHT = 600
-FPS = 60
+WINDOW_WIDTH = 400 # Width of the game window.
+WINDOW_HEIGHT = 600 # Height of the game window.
+FPS = 60 # Frames per second.
 
+# Physics parameters for the game:
 GRAVITY = 0.5
 JUMP_VELOCITY = -12  # Initial jump velocity (vertical component)
 HORIZONTAL_VELOCITY = 5  # Horizontal component when jumping diagonally
-MOVE_STEP = 10  # Step size for horizontal movement within a platform
+MOVE_STEP = 10  # Number of pixels the agent moves horizontally per action.
 
-# List of platforms with their corresponding "level" and rectangle definition.
+# -------------------------------------------------------------------
+# List of platforms:
+# Each platform is defined by its "level" and its rectangle (pygame.Rect).
+# These platforms act as ground and elevated surfaces in the game.
+# -------------------------------------------------------------------
 platforms = [
     {"level": 0, "rect": pygame.Rect(0, 550, 400, 50)},  # ground
     {"level": 1, "rect": pygame.Rect(20, 450, 150, 10)},  # Level 1 - left platform
@@ -74,9 +95,12 @@ platforms = [
 ]
 
 
-# -------------------------
-# Q-learning algorithm implementation
-# -------------------------
+# -------------------------------------------------------------------
+# QAgent Class:
+# Implements the Q-Learning algorithm.
+# This class includes methods to select actions using an epsilon-greedy
+# strategy, update Q-values, and store past experiences.
+# -------------------------------------------------------------------
 class QAgent:
     def __init__(self, epsilon=1.0, alpha=0.1, gamma=0.9):
         self.epsilon = epsilon  # Exploration rate
@@ -138,7 +162,10 @@ class QAgent:
                 self.update_q(state, action, reward, next_state)
 
 
-# -------------------------
+# -------------------------------------------------------------------
+# AgentObj Class:
+# Represents the game agent (player). This class initializes the agent's size,
+# position, and health.
 # In-game [agent] object controlled by Q-learning
 # -------------------------
 class AgentObj:
@@ -148,7 +175,10 @@ class AgentObj:
         self.reset()
 
     def reset(self):
-        # Set the initial position of the agent randomly on the ground platform.
+        """
+        Reset the agent's position to a random location on the ground platform.
+        Also resets vertical velocity and health.
+        """
         ground = platforms[0]['rect']
         self.x = random.randint(ground.left, ground.right - self.width)
         self.y = ground.top - self.height
@@ -156,9 +186,12 @@ class AgentObj:
         self.health = 100
 
 
-# -------------------------
-# Enemy (NPC) objects: they move left and right along their platform.
-# -------------------------
+# -------------------------------------------------------------------
+# EnemyObj Class:
+# Represents enemy characters that move horizontally along a platform.
+# Enemies have a random starting position and direction, and reverse direction
+# upon reaching the edge of their platform.
+# -------------------------------------------------------------------
 class EnemyObj:
     def __init__(self, platform):
         self.platform = platform
@@ -171,7 +204,10 @@ class EnemyObj:
         self.direction = random.choice([-1, 1])
 
     def update(self):
-        # Update enemy's horizontal position. Reverse direction when reaching the platform's boundaries.
+        """
+        Update the enemy's horizontal position.
+        Reverse direction if the enemy crashes into the platform boundaries.
+        """
         self.x += self.speed * self.direction
         pf_rect = self.platform['rect']
         if self.x <= pf_rect.left or self.x + self.width >= pf_rect.right:
@@ -196,13 +232,18 @@ class EnemyObj:
         pygame.draw.line(screen, (0, 0, 0), start_mouth, end_mouth, 1)
 
     def get_rect(self):
-        # Return the rectangle of the enemy for collision detection.
+        """
+        Return a rectangle that represents the enemy's current position.
+        This is used for collision detection.
+        """
         return pygame.Rect(int(self.x), int(self.y), self.width, self.height)
 
 
-# -------------------------
-# Functions to draw the agent and environment.
-# -------------------------
+# -------------------------------------------------------------------
+# Drawing Functions:
+# These functions handle drawing the agent, the game environment,
+# and the user interface (information overlay).
+# -------------------------------------------------------------------
 def draw_agent(agent):
     """
     Draw the agent on the screen.
@@ -234,7 +275,12 @@ def draw_environment(agent):
 
 def draw_UI(episode, epsilon, health, curr_score, high_score):
     """
-    Display UI information such as the current episode number, epsilon, health, current score, and high score.
+    Display the user interface overlay that shows:
+    - The current episode number.
+    - The current epsilon value.
+    - The agent's health.
+    - The current episode's score.
+    - The highest score achieved so far.
     """
     ui_text1 = f"Episode: {episode}"
     ui_text2 = f"Epsilon: {epsilon:.3f}"
@@ -249,10 +295,13 @@ def draw_UI(episode, epsilon, health, curr_score, high_score):
         y_offset += 25
 
 
-# -------------------------
-# State discretisation function:
-# Maps the agent's relative position on the current platform into 10 discrete bins.
-# -------------------------
+# -------------------------------------------------------------------
+# Function: get_state
+#
+# Discretizes the agent’s state based on its relative horizontal position
+# on its current platform. The state is represented as a tuple: (platform level, bin index).
+# The bin index (0-9) divides the platform into 10 equal sections.
+# -------------------------------------------------------------------
 def get_state(agent, current_platform):
     """
     Return a discrete state representation consisting of:
@@ -267,9 +316,11 @@ def get_state(agent, current_platform):
     return (current_platform['level'], bin_index)
 
 
-# -------------------------
-# Handle game pause; pressing P pauses the game.
-# -------------------------
+# -------------------------------------------------------------------
+# Function: handle_pause
+# Pauses the game until the user presses the "P" key.
+# A pause screen is displayed during this time.
+# -------------------------------------------------------------------
 def handle_pause():
     paused = True
     pause_text = font.render("PAUSED - Press P to resume", True, (255, 255, 0))
@@ -310,10 +361,12 @@ def show_start_screen():
         clock.tick(FPS)
 
 
+# -------------------------------------------------------------------
+# Function: display_episode_end_message
+#
+# Displays an on-screen message at the end of an episode, showing the final score.
+# -------------------------------------------------------------------
 def display_episode_end_message(episode, score):
-    """
-    Display an end-of-episode message with the episode number and current score.
-    """
     message = f"Episode {episode} Over! Score: {score}"
     text_surface = font.render(message, True, (255, 0, 0))
     screen.fill((0, 0, 0))
@@ -468,16 +521,20 @@ def simulate_jump(agent, action, current_platform, enemies):
     return landing_platform, new_state, reward, terminal
 
 
-# -------------------------
-# Pygame initialization and main loop configuration.
-# -------------------------
+# -------------------------------------------------------------------
+# Pygame initialization and window configuration for training mode.
+# -------------------------------------------------------------------
 pygame.init()
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption("Q-Learning Platformer - Train Mode")
 clock = pygame.time.Clock()
 font = pygame.font.SysFont(None, 24)
 
-# Initialize Q-learning agent, player, and scores.
+# -------------------------------------------------------------------
+# Instantiate the Q-learning agent and game objects.
+# example: The agent starts with full exploration (epsilon = 1.0), a learning rate of 0.1,
+# and a discount factor of 0.9.
+# -------------------------------------------------------------------
 q_agent = QAgent(epsilon=1.0, alpha=0.1, gamma=0.9)
 player = AgentObj()
 current_score = 0
@@ -485,9 +542,16 @@ high_score = 0
 episode = 1
 
 
-# -------------------------
-# Main training loop.
-# -------------------------
+# -------------------------------------------------------------------
+# Function: train
+#
+# Main training loop:
+# - Resets the agent for each episode.
+# - The agent interacts with the environment (moves, jumps, and collides).
+# - Q-values are updated and experiences are stored.
+# - Logs are written and the Q-table is saved after each episode.
+# - Epsilon is decayed gradually to shift from exploration to exploitation.
+# -------------------------------------------------------------------
 def train():
     global episode, current_score, high_score, q_agent, player
     show_start_screen()
@@ -495,8 +559,8 @@ def train():
         episode_reward = 0
         terminal = False
 
-        player.reset()
-        current_platform = platforms[0]
+        player.reset() # Reset player's position and health.
+        current_platform = platforms[0] # Start on the ground platform.
 
         # Create enemies on platforms with levels 1, 2, or 3.
         enemies = [EnemyObj(pf) for pf in platforms if pf["level"] in [1, 2, 3]]
@@ -520,7 +584,7 @@ def train():
             q_agent.update_q(state, action, reward, new_state if new_state is not None else state)
             q_agent.store_experience(state, action, reward, new_state)
 
-            pygame.time.wait(200)
+            pygame.time.wait(200) # Delay to control simulation speed.
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -544,6 +608,13 @@ def train():
         save_q_table(q_agent.q_table)
 
 
+# -------------------------------------------------------------------
+# Function: plot_learning_curve_and_save
+#
+# Reads the training log file to extract episode numbers, total rewards, and epsilon values.
+# Plots two graphs: the total reward curve (with mean and moving average) and the epsilon decay curve.
+# Statistical metrics (mean reward and standard deviation) are calculated and displayed.
+# -------------------------------------------------------------------
 MOVING_AVG_WINDOW = 50
 def plot_learning_curve_and_save():
     """
@@ -577,41 +648,41 @@ def plot_learning_curve_and_save():
         print("No data found in the log file.")
         return
 
-    # 计算统计指标
-    mean_reward = np.mean(total_rewards)  # 平均奖励
-    std_reward = np.std(total_rewards)  # 奖励标准差
+    # caculate moving average
+    mean_reward = np.mean(total_rewards)  # Mean reward
+    std_reward = np.std(total_rewards)  # Reward standard deviation
     moving_avg_rewards = pd.Series(total_rewards).rolling(window=MOVING_AVG_WINDOW, min_periods=1).mean()  # 移动平均奖励
 
-    # --- 1️⃣ 绘制奖励曲线 ---
+    # Plot Total Reward Curve.
     plt.figure(figsize=(10, 5))
 
-    # 原始奖励曲线
+    # original reward curve
     plt.plot(episodes, total_rewards, marker='o', color='b', label='Total Reward', alpha=0.5)
 
-    # 平均奖励（水平线）
+    # mean reward curve (dashed line）
     plt.axhline(y=mean_reward, color='g', linestyle='--', label=f'Mean Reward ({mean_reward:.2f})')
 
-    # 移动平均奖励曲线
+    # moving average reward curve (solid line)
     plt.plot(episodes, moving_avg_rewards, color='r', linestyle='-', linewidth=2, label='Moving Avg Reward')
 
-    # 标题 & 轴标签
+    # title and legend
     plt.xlabel('Episode')
     plt.ylabel('Total Reward')
     plt.title('Total Reward Curve for Q-learning')
     plt.legend()
     plt.grid(True)
 
-    # 统计指标文本显示
+    # statical metrics
     stats_text = f"Mean Reward: {mean_reward:.2f}\nStd Dev: {std_reward:.2f}"
     plt.text(0.05, 0.05, stats_text, transform=plt.gca().transAxes, fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
 
-    # 保存 & 关闭
+    # save & show figure
     plot_reward_path = os.path.join(save_dir, "train_learning_curve.png")
     plt.savefig(plot_reward_path)
     print(f"Total reward curve saved to: {plot_reward_path}")
     plt.close()
 
-    # --- 2️⃣ 绘制 Epsilon 衰减曲线 ---
+    # plot epsilon decay curve
     plt.figure(figsize=(10, 5))
     plt.plot(episodes, epsilons, marker='x', color='r', label='Epsilon')
     plt.xlabel('Episode')
@@ -626,7 +697,10 @@ def plot_learning_curve_and_save():
     print(f"Epsilon decay curve saved to: {plot_epsilon_path}")
     plt.close()
 
-
+# -------------------------------------------------------------------
+# Main entry point for training.
+# Runs the training loop and then plots the learning curves once training is complete.
+# -------------------------------------------------------------------
 if __name__ == "__main__":
     try:
         train()
