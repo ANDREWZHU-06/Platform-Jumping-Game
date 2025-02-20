@@ -1,7 +1,6 @@
 # Platform-Jumping-Game
 Platform Jumping Game base on Q-Learning
-YouTube Link: https://youtu.be/gkcJrJq_hqU![image](https://github.com/user-attachments/assets/572f70b6-db1d-4f3b-a3e7-d93f6b352f12)
-
+YouTube Link: https://youtu.be/gkcJrJq_hqU
 # Q-Learning Platformer
 
 # Q-Learning Platformer
