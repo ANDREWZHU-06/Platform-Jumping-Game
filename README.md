@@ -128,12 +128,3 @@ In testing mode:
 ## License
 
 This project is released under the [MIT License](LICENSE).
-
----
-
-Feel free to fork this repository and modify the code for your research or educational purposes. If you have any questions or suggestions, please open an issue or submit a pull request.
-```
-
----
-
-This README provides a comprehensive explanation of the project, usage instructions, code structure, and features, all in English.
