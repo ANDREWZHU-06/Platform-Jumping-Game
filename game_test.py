@@ -19,12 +19,20 @@ q_table_path = os.path.join(save_dir, "q_table.pkl")
 log_file_path = os.path.join(save_dir, "learning_log.txt")
 test_log_path = os.path.join(save_dir, "test_log.txt")
 
+# -------------------------------------------------------------------
+# Function: save_q_table
+# Saves the current Q-table to a pickle file.
+# -------------------------------------------------------------------
 def save_q_table(q_table):
     """Save the Q-table to a file"""
     with open(q_table_path, "wb") as f:
         pickle.dump(q_table, f)
     print(f"Q-table has been saved to: {q_table_path}")
 
+# -------------------------------------------------------------------
+# Function: load_q_table
+# Loads the Q-table from disk if available; otherwise returns an empty dictionary.
+# -------------------------------------------------------------------
 def load_q_table():
     """try to load the Q-table from a file, return an empty table if not found"""
     if os.path.exists(q_table_path):
@@ -36,6 +44,11 @@ def load_q_table():
         print("No saved Q-table found. Initializing a new one.")
         return {}
 
+# -------------------------------------------------------------------
+# Logging Functions:
+# log_episode is used for training logs.
+# log_test_episode logs test performance separately.
+# -------------------------------------------------------------------
 def log_episode(episode, total_reward, epsilon):
     """
     Record the status of each Episode to a log (which can be used to observe the effect during testing)
@@ -47,7 +60,7 @@ def log_episode(episode, total_reward, epsilon):
 
 def log_test_episode(episode, total_reward, epsilon):
     """
-    Add a new test process logging function, specifically for logging the test mode, will not overwrite learning_log.txt
+    Record the test episode information in a separate test log.
     """
     log_line = f"Test Episode: {episode}, Total Reward: {total_reward:.2f}, Epsilon: {epsilon:.3f}\n"
     with open(test_log_path, "a") as f:
@@ -62,12 +75,12 @@ WINDOW_HEIGHT = 600
 FPS = 60
 
 GRAVITY = 0.5
-JUMP_VELOCITY = -12         # jump velocity
+JUMP_VELOCITY = -12         # Vertical jump velocity.
 HORIZONTAL_VELOCITY = 5      # jump horizontal velocity
-MOVE_STEP = 10               # move step
+MOVE_STEP = 10               # Horizontal step size for regular movement.
 
 # -------------------------
-# platforms settings
+# platforms settings(same as training)
 # -------------------------
 platforms = [
     {"level": 0, "rect": pygame.Rect(0, 550, 400, 50)},
@@ -80,9 +93,11 @@ platforms = [
     {"level": 4, "rect": pygame.Rect(150, 150, 100, 10)},
 ]
 
-# -------------------------
-# Q-learning algorithm settings(testing mode)
-# -------------------------
+# -------------------------------------------------------------------
+# QAgent class for test mode.
+# A lower epsilon (0.05) is used to favor exploitation of the learned policy.
+# The Q-table is loaded from the training phase.
+# -------------------------------------------------------------------
 class QAgent:
     def __init__(self, epsilon=0.05, alpha=0.3, gamma=0.9):
         self.epsilon = epsilon  # setting for epsilon-greedy
@@ -96,6 +111,10 @@ class QAgent:
         return self.q_table[state]
 
     def choose_action(self, state):
+        """
+        Choose an action mainly based on the best known Q-values,
+        but still follow an epsilon-greedy policy.
+        """
         q_vals = self.get_q_values(state)
         max_q = max(q_vals)
         best_actions = [i for i, q in enumerate(q_vals) if q == max_q]
@@ -105,9 +124,10 @@ class QAgent:
         else:
             return random.choice(best_actions)
 
-# -------------------------
-# In-game Agent objects (controlled by Q-learning)
-# -------------------------
+# -------------------------------------------------------------------
+# AgentObj class for test mode.
+# Same as in training mode.
+# -------------------------------------------------------------------
 class AgentObj:
     def __init__(self):
         self.width = 20
@@ -120,9 +140,11 @@ class AgentObj:
         self.vy = 0
         self.health = 100
 
-# -------------------------
-# Enemy (NPC) objects: Move left and right
-# -------------------------
+
+# -------------------------------------------------------------------
+# EnemyObj class for test mode.
+# Identical to training mode.
+# -------------------------------------------------------------------
 class EnemyObj:
     def __init__(self, platform):
         self.platform = platform
@@ -155,9 +177,10 @@ class EnemyObj:
     def get_rect(self):
         return pygame.Rect(int(self.x), int(self.y), self.width, self.height)
 
-# -------------------------
-# Functions for drawing agent and environments
-# -------------------------
+# -------------------------------------------------------------------
+# Drawing Functions for test mode.
+# These functions are the same as in training mode.
+# -------------------------------------------------------------------
 def draw_agent(agent):
     center = (int(agent.x + agent.width/2), int(agent.y + agent.height/2))
     radius = agent.width // 2
@@ -191,9 +214,12 @@ def draw_UI(episode, epsilon, health, curr_score, high_score):
         screen.blit(text_surface, (5, y_offset))
         y_offset += 25
 
-# -------------------------
-# State discretisation: dividing the relative position of the agent on the platform into 10 intervals
-# -------------------------
+# -------------------------------------------------------------------
+# Function: get_state
+#
+# Discretizes the agent's current state into a tuple of (platform level, bin index)
+# where the bin index is based on the agent's horizontal position within the platform.
+# -------------------------------------------------------------------
 def get_state(agent, current_platform):
     p_rect = current_platform['rect']
     relative_x = agent.x - p_rect.left
@@ -202,6 +228,10 @@ def get_state(agent, current_platform):
     bin_index = max(0, min(9, bin_index))
     return (current_platform['level'], bin_index)
 
+# -------------------------------------------------------------------
+# Pause and start screen functions for test mode.
+# These work identically to the versions in training mode.
+# -------------------------------------------------------------------
 def handle_pause():
     paused = True
     pause_text = font.render("PAUSED - Press P to resume", True, (255, 255, 0))
@@ -243,9 +273,13 @@ def display_episode_end_message(episode, score):
     pygame.display.flip()
     pygame.time.wait(1000)
 
-# -------------------------
-# reposition the agent and enemies according to the action taken and the current platform
-# -------------------------
+
+# -------------------------------------------------------------------
+# Function: reposition
+#
+# Handles horizontal movement of the agent (LEFT or RIGHT) and updates enemy positions,
+# checks for collisions and returns the new discretized state, immediate reward, and terminal flag.
+# -------------------------------------------------------------------
 def reposition(agent, action, current_platform, enemies):
     pf_rect = current_platform['rect']
     if action == 0:
@@ -267,8 +301,24 @@ def reposition(agent, action, current_platform, enemies):
     terminal = agent.health <= 0
     return new_state, reward, terminal
 
+
+# -------------------------------------------------------------------
+# Function: simulate_jump
+
+# The simulation runs frame-by-frame, updating the agent's position until
+# the agent lands on a platform or a terminal condition occurs.
+# Returns:
+# landing_platform: The platform on which the agent landed (if any).
+# new_state: The discretized state after landing.
+# reward: The cumulative reward gained during the jump.
+# terminal: A flag indicating if the episode is over.
+# -------------------------------------------------------------------
 def simulate_jump(agent, action, current_platform, enemies):
-    # set the velocity and direction of the agent based on the action
+    # Simulates the agent's jump action for test mode.
+    # Different jump actions correspond to:
+    # - vertical jump (action 2),
+    # - diagonal left jump (action 3),
+    # - diagonal right jump (action 4).
     if action == 2:
         vx, vy = 0, JUMP_VELOCITY
     elif action == 3:
@@ -284,6 +334,7 @@ def simulate_jump(agent, action, current_platform, enemies):
     collision_occurred = False
     reward = 0
 
+    # Loop to simulate jump motion.
     # record the previous y position of the agent
     while True:
         for event in pygame.event.get():
@@ -364,16 +415,20 @@ def simulate_jump(agent, action, current_platform, enemies):
 
     return landing_platform, new_state, reward, terminal
 
-# -------------------------
-# Pygame initialization and main loop
-# -------------------------
+# -------------------------------------------------------------------
+# Pygame initialization and window configuration for test mode.
+# -------------------------------------------------------------------
 pygame.init()
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption("Q-Learning Platformer - Test Mode")
 clock = pygame.time.Clock()
 font = pygame.font.SysFont(None, 24)
 
-# create the objects for the game and load the trained q-table
+# -------------------------------------------------------------------
+# Instantiate the Q-learning agent and game objects for testing.
+# The agent is set with a low epsilon (0.05) for mainly exploiting the learned policy.
+# The Q-table is loaded from disk.
+# -------------------------------------------------------------------
 q_agent = QAgent(epsilon=0.05, alpha=0.3, gamma=0.9)
 q_agent.q_table = load_q_table()  # load the trained q-table
 player = AgentObj()
@@ -381,9 +436,13 @@ current_score = 0
 high_score = 0
 episode = 1
 
-# -------------------------
-# test main loop
-# -------------------------
+# -------------------------------------------------------------------
+# Function: test
+#
+# Main testing loop:
+# Each episode, the agent interacts with the environment (similar to training),
+# but with a low exploration rate. The performance of each episode is logged separately.
+# -------------------------------------------------------------------
 def test():
     global episode, current_score, high_score, q_agent, player
     show_start_screen()
@@ -428,18 +487,20 @@ def test():
         if episode_reward > high_score:
             high_score = episode_reward
 
+        # Log the test episode performance.
         log_test_episode(episode, episode_reward, q_agent.epsilon)
 
         episode += 1
         pygame.time.wait(1000)
 
+# -------------------------------------------------------------------
+# Function: plot_test_curve_and_save
+#
+# Reads the test log file to extract episode numbers, total rewards, and epsilon values.
+# Plots two graphs: Test Total Reward Curve (with mean and moving average) and Test Epsilon Curve.
+# Displays statistical metrics (mean reward and standard deviation) on the graphs.
+# -------------------------------------------------------------------
 def plot_test_curve_and_save():
-    """
-    Read the test log file, extract episodes, total rewards, and epsilon values,
-    then plot and save both the total reward curve and the epsilon decay curve.
-    Additionally, compute and display statistical metrics like mean reward, standard deviation,
-    and moving average reward on the test reward curve.
-    """
     episodes = []
     total_rewards = []
     epsilons = []
@@ -504,7 +565,10 @@ def plot_test_curve_and_save():
     print(f"Test epsilon curve saved to: {test_epsilon_curve_path}")
     plt.close()
 
-
+# -------------------------------------------------------------------
+# Main entry point for test mode.
+# Runs the test loop, and after testing, plots the test curves.
+# -------------------------------------------------------------------
 if __name__ == "__main__":
     try:
         test()
