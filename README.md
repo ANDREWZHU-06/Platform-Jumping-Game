@@ -125,6 +125,23 @@ In testing mode:
 - **Logging and Plotting**:  
   Both scripts include functions to log episode outcomes and plot learning curves with statistical metrics.
 
+# Q-Learning Alpha Parameter Analysis
+
+This table summarizes the impact of different `alpha` (learning rate) values on training and testing performance.
+
+| Alpha  | Training Stability | Training Reward | Testing Reward | Testing Stability | Recommended Scenario |
+|--------|--------------------|----------------|----------------|--------------------|----------------------|
+| **0.1** | Medium (Std Dev 51.83) | **Highest Training Reward (12.97)** | 13.68 (Low) | High Variance | Suitable for environments that require stable training, but testing performance may be suboptimal. |
+| **0.2** | **Most Stable (Std Dev 40.06)** | 10.65 (Second Highest) | 15.50 (Medium) | **Most Stable (Std Dev 69.56)** | **Best trade-off: stable training and decent testing performance.** |
+| **0.3** | High Training Variance (Std Dev 50.92) | **Lowest Training Reward (5.26)** | **Highest Testing Reward (35.57)** | High Variance | If the goal is the best final testing performance, `alpha=0.3` might be the optimal choice. |
+
+## Key Takeaways:
+- **If you prioritize stable training**, `alpha=0.2` is the best choice.
+- **If you want the highest testing performance**, `alpha=0.3` performs the best but has unstable training.
+- **If you want a balanced approach**, `alpha=0.2` provides stable training and decent testing results.
+
+**Recommendation**: Choose `alpha` based on whether you prioritize training stability or final performance.
+
 ## License
 
 This project is released under the [MIT License](LICENSE).
