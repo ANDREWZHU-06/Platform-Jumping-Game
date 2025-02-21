@@ -137,6 +137,13 @@ This table summarizes the impact of different `alpha` (learning rate) values on 
 | **0.2** | **Most Stable (Std Dev 40.06)** | 10.65 (Second Highest) | 15.50 (Medium) | **Most Stable (Std Dev 69.56)** | **Best trade-off: stable training and decent testing performance.** |
 | **0.3** | High Training Variance (Std Dev 50.92) | **Lowest Training Reward (5.26)** | **Highest Testing Reward (35.57)** | High Variance | If the goal is the best final testing performance, `alpha=0.3` might be the optimal choice. |
 
+Training Mode Workflow Chart:
+![training_flowchart](https://github.com/user-attachments/assets/0a10eaeb-1727-4cba-a392-2e0b931b15e1)
+
+Testing Mode Workflow Chart
+![testing_flowchart](https://github.com/user-attachments/assets/4425cdc3-8c40-4083-9ac5-2489c7614b98)
+
+
 ## Key Takeaways:
 - **If you prioritize stable training**, `alpha=0.2` is the best choice.
 - **If you want the highest testing performance**, `alpha=0.3` performs the best but has unstable training.
