@@ -133,6 +133,13 @@ In testing mode:
 
 # Q-Learning Alpha Parameter Analysis
 
+# Epsilon Decay Curve(showcase version)
+![train_epsilon_curve](https://github.com/user-attachments/assets/c0a69946-866a-4f32-b373-f98c837b4501)
+
+# Total Reward Curve(showcase version)
+![train_learning_curve](https://github.com/user-attachments/assets/cb7cfa63-00bd-4101-b124-19c3f408111e)
+
+
 This table summarizes the impact of different `alpha` (learning rate) values on training and testing performance.
 
 | Alpha  | Training Stability | Training Reward | Testing Reward | Testing Stability | Recommended Scenario |
