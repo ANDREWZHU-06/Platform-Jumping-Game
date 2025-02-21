@@ -8,6 +8,10 @@ YouTube Link: https://youtu.be/gkcJrJq_hqU
 
 This repository contains a platform-jumping game built with the Pygame library and trained using a Q-Learning algorithm. The agent learns to navigate through platforms, avoid enemies, and reach higher levels by interacting with the environment. The project includes separate modes for training and testing the agent and provides logs and plots for detailed performance analysis.
 
+# Game Screen
+<img width="151" alt="image" src="https://github.com/user-attachments/assets/40c474df-c907-4f85-80b8-2b9f1dda267e" />
+
+
 ## Overview
 
 The project consists of two primary components:
