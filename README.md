@@ -133,10 +133,10 @@ In testing mode:
 
 # Q-Learning Alpha Parameter Analysis
 
-# Epsilon Decay Curve(showcase version)
+# Epsilon Decay Curve(showcase version -- alpha=0.2)
 ![train_epsilon_curve](https://github.com/user-attachments/assets/c0a69946-866a-4f32-b373-f98c837b4501)
 
-# Total Reward Curve(showcase version)
+# Total Reward Curve(showcase version -- alpha=0.2)
 ![train_learning_curve](https://github.com/user-attachments/assets/cb7cfa63-00bd-4101-b124-19c3f408111e)
 
 
